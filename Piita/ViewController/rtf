@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<title>MainTableViewController.swift</title>
+<link rel="stylesheet" type="text/css" href="highlight.css">
+</head>
+<body class="hl">
+<pre class="hl"><span class="hl slc">//</span>
+<span class="hl slc">//  MainTableViewController.swift</span>
+<span class="hl slc">//  Piita</span>
+<span class="hl slc">//</span>
+<span class="hl slc">//  Created by 中嶋裕也 on 2018/11/21.</span>
+<span class="hl slc">//  Copyright © 2018 中嶋裕也. All rights reserved.</span>
+<span class="hl slc">//</span>
+
+<span class="hl kwa">import</span> UIKit
+<span class="hl kwa">import</span> Alamofire
+<span class="hl kwa">import</span> SwiftyJSON
+
+<span class="hl kwa">class</span> MainTableViewController<span class="hl opt">:</span> UITableViewController<span class="hl opt">{</span>
+    
+    <span class="hl kwa">var</span> <span class="hl kwc">json</span><span class="hl opt">:</span>JSON <span class="hl opt">= []</span>
+    <span class="hl kwa">var</span> <span class="hl kwc">searchBar</span><span class="hl opt">:</span> UISearchBar<span class="hl opt">!</span>
+    
+    
+    override <span class="hl kwa">func</span> <span class="hl kwd">viewDidLoad</span><span class="hl opt">() {</span>
+        <span class="hl kwb">super</span><span class="hl opt">.</span><span class="hl kwd">viewDidLoad</span><span class="hl opt">()</span>
+        
+        <span class="hl kwc">searchBar</span> <span class="hl opt">=</span> <span class="hl kwd">UISearchBar</span><span class="hl opt">()</span>
+        
+        <span class="hl slc">//selfがMainTableviewControllerになっちゃう</span>
+        <span class="hl kwc">searchBar</span><span class="hl opt">.</span>delegate <span class="hl opt">=</span> <span class="hl kwb">self</span>
+        
+        <span class="hl slc">//これはできる</span>
+        <span class="hl kwc">searchBar</span><span class="hl opt">.</span>delegate <span class="hl opt">=</span> <span class="hl kwd">UISearchBar</span><span class="hl opt">().</span>delegate
+        
+        <span class="hl kwc">searchBar</span><span class="hl opt">.</span>barTintColor <span class="hl opt">=</span> <span class="hl kwd">UIColor</span><span class="hl opt">(</span>red<span class="hl opt">:</span> <span class="hl num">0.43921569</span><span class="hl opt">,</span> green<span class="hl opt">:</span> <span class="hl num">0.30588235</span><span class="hl opt">,</span> blue<span class="hl opt">:</span> <span class="hl num">0.58823529</span><span class="hl opt">,</span> alpha<span class="hl opt">:</span> <span class="hl num">1.0</span><span class="hl opt">)</span>
+        <span class="hl kwc">searchBar</span><span class="hl opt">.</span>tintColor <span class="hl opt">=</span> UIColor<span class="hl opt">.</span>red
+        
+        <span class="hl kwd">getdata</span><span class="hl opt">()</span>
+        
+        <span class="hl kwb">self</span><span class="hl opt">.</span>tableView<span class="hl opt">.</span>refreshControl <span class="hl opt">=</span> <span class="hl kwd">UIRefreshControl</span><span class="hl opt">()</span>
+        <span class="hl kwb">self</span><span class="hl opt">.</span>tableView<span class="hl opt">.</span>refreshControl?<span class="hl opt">.</span><span class="hl kwd">addTarget</span><span class="hl opt">(</span><span class="hl kwb">self</span><span class="hl opt">,</span> action<span class="hl opt">:</span> <span class="hl ppc">#selector(self.refresh), for: UIControl.Event.valueChanged)</span>
+        <span class="hl kwb">self</span><span class="hl opt">.</span>tableView<span class="hl opt">.</span>separatorColor <span class="hl opt">=</span> UIColor<span class="hl opt">.</span>purple
+        <span class="hl kwb">self</span><span class="hl opt">.</span>tableView<span class="hl opt">.</span>separatorInset <span class="hl opt">=</span> <span class="hl kwd">UIEdgeInsets</span><span class="hl opt">(</span>top<span class="hl opt">:</span> <span class="hl num">0</span><span class="hl opt">,</span> left<span class="hl opt">:</span> <span class="hl num">3</span><span class="hl opt">,</span> bottom<span class="hl opt">:</span> <span class="hl num">0</span><span class="hl opt">,</span> right<span class="hl opt">:</span> <span class="hl num">11</span><span class="hl opt">);</span>
+        <span class="hl kwb">self</span><span class="hl opt">.</span>tableView<span class="hl opt">.</span>backgroundColor <span class="hl opt">=</span> <span class="hl kwd">UIColor</span><span class="hl opt">(</span>red<span class="hl opt">:</span> <span class="hl num">0.43921</span><span class="hl opt">,</span> green<span class="hl opt">:</span> <span class="hl num">0.30588</span><span class="hl opt">,</span> blue<span class="hl opt">:</span> <span class="hl num">0.58823</span><span class="hl opt">,</span> alpha<span class="hl opt">:</span> <span class="hl num">1.0</span><span class="hl opt">)</span>
+    <span class="hl opt">}</span>
+    
+    
+    <span class="hl kwa">func</span> <span class="hl kwd">getdata</span><span class="hl opt">(){</span>
+        
+        <span class="hl kwa">if</span> <span class="hl kwc">searchBar</span><span class="hl opt">.</span>text <span class="hl opt">!=</span> <span class="hl str">&quot;&quot;</span><span class="hl opt">{</span>
+            Alamofire<span class="hl opt">.</span><span class="hl kwd">request</span><span class="hl opt">(</span><span class="hl str">&quot;https://qiita.com/api/v2/items?query=&quot;</span> <span class="hl opt">+</span> <span class="hl kwc">searchBar</span><span class="hl opt">.</span>text<span class="hl opt">!)</span>
+                <span class="hl opt">.</span>responseJSON<span class="hl opt">{</span> response <span class="hl kwa">in</span>
+                    <span class="hl kwa">guard let</span> <span class="hl kwc">object</span> <span class="hl opt">=</span> response<span class="hl opt">.</span>result<span class="hl opt">.</span>value <span class="hl kwa">else</span> <span class="hl opt">{</span>
+                        <span class="hl kwd">print</span><span class="hl opt">(</span><span class="hl str">&quot;load faild&quot;</span><span class="hl opt">)</span>
+                        <span class="hl kwa">return</span>
+                    <span class="hl opt">}</span>
+                    
+                    <span class="hl kwb">self</span><span class="hl opt">.</span><span class="hl kwc">json</span> <span class="hl opt">=</span> <span class="hl kwd">JSON</span><span class="hl opt">(</span><span class="hl kwc">object</span><span class="hl opt">)</span>
+                    <span class="hl kwb">self</span><span class="hl opt">.</span>tableView<span class="hl opt">.</span><span class="hl kwd">reloadData</span><span class="hl opt">()</span>
+                    <span class="hl kwb">self</span><span class="hl opt">.</span>tableView<span class="hl opt">.</span>refreshControl?<span class="hl opt">.</span><span class="hl kwd">endRefreshing</span><span class="hl opt">()</span>
+            <span class="hl opt">}</span>
+        <span class="hl opt">}</span><span class="hl kwa">else</span><span class="hl opt">{</span>
+            Alamofire<span class="hl opt">.</span><span class="hl kwd">request</span><span class="hl opt">(</span><span class="hl str">&quot;https://qiita.com/api/v2/items&quot;</span><span class="hl opt">)</span>
+                <span class="hl opt">.</span>responseJSON<span class="hl opt">{</span> response <span class="hl kwa">in</span>
+                    <span class="hl kwa">guard let</span> <span class="hl kwc">object</span> <span class="hl opt">=</span> response<span class="hl opt">.</span>result<span class="hl opt">.</span>value <span class="hl kwa">else</span> <span class="hl opt">{</span>
+                        <span class="hl slc">//失敗時</span>
+                        <span class="hl kwd">print</span><span class="hl opt">(</span><span class="hl str">&quot;load faild&quot;</span><span class="hl opt">)</span>
+                        <span class="hl kwa">return</span>
+                    <span class="hl opt">}</span>
+                    
+                    <span class="hl kwb">self</span><span class="hl opt">.</span><span class="hl kwc">json</span> <span class="hl opt">=</span> <span class="hl kwd">JSON</span><span class="hl opt">(</span><span class="hl kwc">object</span><span class="hl opt">)</span>
+                    <span class="hl kwb">self</span><span class="hl opt">.</span>tableView<span class="hl opt">.</span><span class="hl kwd">reloadData</span><span class="hl opt">()</span>
+                    <span class="hl kwb">self</span><span class="hl opt">.</span>tableView<span class="hl opt">.</span>refreshControl?<span class="hl opt">.</span><span class="hl kwd">endRefreshing</span><span class="hl opt">()</span>
+            <span class="hl opt">}</span>
+        <span class="hl opt">}</span>
+        
+    <span class="hl opt">}</span>
+    
+    
+    <span class="hl slc">// MARK: - Refresh</span>
+    <span class="hl kwb">&#64;objc</span> <span class="hl kwa">func</span> <span class="hl kwd">refresh</span><span class="hl opt">(){</span>
+        <span class="hl kwd">getdata</span><span class="hl opt">()</span>
+    <span class="hl opt">}</span>
+
+
+    <span class="hl slc">// MARK: - Table view</span>
+
+    override <span class="hl kwa">func</span> <span class="hl kwd">numberOfSections</span><span class="hl opt">(</span><span class="hl kwa">in</span> tableView<span class="hl opt">:</span> UITableView<span class="hl opt">) -&gt;</span> <span class="hl kwb">Int</span> <span class="hl opt">{</span>
+        <span class="hl slc">// #warning Incomplete implementation, return the number of sections</span>
+        <span class="hl kwa">return</span> <span class="hl num">1</span>
+    <span class="hl opt">}</span>
+    
+    
+    override <span class="hl kwa">func</span> <span class="hl kwd">tableView</span><span class="hl opt">(</span>_ tableView<span class="hl opt">:</span> UITableView<span class="hl opt">,</span> numberOfRowsInSection section<span class="hl opt">:</span> <span class="hl kwb">Int</span><span class="hl opt">) -&gt;</span> <span class="hl kwb">Int</span> <span class="hl opt">{</span>
+        <span class="hl slc">// #warning Incomplete implementation, return the number of rows</span>
+        <span class="hl kwa">return</span> <span class="hl kwb">self</span><span class="hl opt">.</span><span class="hl kwc">json</span><span class="hl opt">.</span>count
+    <span class="hl opt">}</span>
+
+    
+    override <span class="hl kwa">func</span> <span class="hl kwd">tableView</span><span class="hl opt">(</span>_ tableView<span class="hl opt">:</span> UITableView<span class="hl opt">,</span> cellForRowAt indexPath<span class="hl opt">:</span> IndexPath<span class="hl opt">) -&gt;</span> UITableViewCell <span class="hl opt">{</span>
+        <span class="hl kwa">let</span> <span class="hl kwc">cell</span> <span class="hl opt">=</span> tableView<span class="hl opt">.</span><span class="hl kwd">dequeueReusableCell</span><span class="hl opt">(</span>withIdentifier<span class="hl opt">:</span> <span class="hl str">&quot;Cell&quot;</span><span class="hl opt">,</span> <span class="hl kwa">for</span><span class="hl opt">:</span> indexPath<span class="hl opt">)</span> <span class="hl kwb">as</span><span class="hl opt">!</span> TableViewCell
+        
+        <span class="hl kwc">cell</span><span class="hl opt">.</span>titleLabel<span class="hl opt">.</span>text <span class="hl opt">=</span> <span class="hl kwb">self</span><span class="hl opt">.</span><span class="hl kwc">json</span><span class="hl opt">[</span>indexPath<span class="hl opt">.</span>row<span class="hl opt">][</span><span class="hl str">&quot;title&quot;</span><span class="hl opt">].</span>description
+        <span class="hl kwc">cell</span><span class="hl opt">.</span>autherLabel<span class="hl opt">.</span>text <span class="hl opt">=</span> <span class="hl str">&quot;&#64;&quot;</span> <span class="hl opt">+</span> <span class="hl kwb">self</span><span class="hl opt">.</span><span class="hl kwc">json</span><span class="hl opt">[</span>indexPath<span class="hl opt">.</span>row<span class="hl opt">][</span><span class="hl str">&quot;user&quot;</span><span class="hl opt">][</span><span class="hl str">&quot;id&quot;</span><span class="hl opt">].</span>description
+        
+        <span class="hl kwa">let</span> <span class="hl kwc">url</span> <span class="hl opt">=</span> <span class="hl kwd">URL</span><span class="hl opt">(</span>string<span class="hl opt">:</span> <span class="hl kwc">json</span><span class="hl opt">[</span>indexPath<span class="hl opt">.</span>row<span class="hl opt">][</span><span class="hl str">&quot;user&quot;</span><span class="hl opt">][</span><span class="hl str">&quot;profile_image_url&quot;</span><span class="hl opt">].</span>description<span class="hl opt">)!</span>
+        <span class="hl kwa">if let</span> <span class="hl kwc">imageData</span> <span class="hl opt">=</span> <span class="hl kwa">try</span>? <span class="hl kwd">Data</span><span class="hl opt">(</span>contentsOf<span class="hl opt">:</span> <span class="hl kwc">url</span><span class="hl opt">) {</span>
+            <span class="hl kwa">let</span> <span class="hl kwc">image</span> <span class="hl opt">=</span> <span class="hl kwd">UIImage</span><span class="hl opt">(</span>data<span class="hl opt">:</span><span class="hl kwc">imageData</span><span class="hl opt">)</span>
+            <span class="hl kwc">cell</span><span class="hl opt">.</span>iconImageView<span class="hl opt">.</span><span class="hl kwc">image</span> <span class="hl opt">=</span> <span class="hl kwc">image</span>
+        <span class="hl opt">}</span>
+
+        <span class="hl kwa">return</span> <span class="hl kwc">cell</span>
+    <span class="hl opt">}</span>
+    
+    
+    override <span class="hl kwa">func</span> <span class="hl kwd">tableView</span><span class="hl opt">(</span>_ tableView<span class="hl opt">:</span> UITableView<span class="hl opt">,</span> didSelectRowAt indexPath<span class="hl opt">:</span> IndexPath<span class="hl opt">) {</span>
+        <span class="hl kwb">self</span><span class="hl opt">.</span><span class="hl kwd">performSegue</span><span class="hl opt">(</span>withIdentifier<span class="hl opt">:</span> <span class="hl str">&quot;ToWebView&quot;</span><span class="hl opt">,</span> sender<span class="hl opt">:</span> <span class="hl kwb">self</span><span class="hl opt">.</span><span class="hl kwc">json</span><span class="hl opt">[</span>indexPath<span class="hl opt">.</span>row<span class="hl opt">][</span><span class="hl str">&quot;url&quot;</span><span class="hl opt">].</span>description<span class="hl opt">)</span>
+    <span class="hl opt">}</span>
+    
+
+    override <span class="hl kwa">func</span> <span class="hl kwd">tableView</span><span class="hl opt">(</span>_ tableView<span class="hl opt">:</span> UITableView<span class="hl opt">,</span> viewForHeaderInSection section<span class="hl opt">:</span> <span class="hl kwb">Int</span><span class="hl opt">) -&gt;</span> UIView? <span class="hl opt">{</span>
+        <span class="hl kwa">return</span> <span class="hl kwc">searchBar</span>
+    <span class="hl opt">}</span>
+    
+    
+    override <span class="hl kwa">func</span> <span class="hl kwd">tableView</span><span class="hl opt">(</span>_ tableView<span class="hl opt">:</span> UITableView<span class="hl opt">,</span> heightForHeaderInSection section<span class="hl opt">:</span> <span class="hl kwb">Int</span><span class="hl opt">) -&gt;</span> CGFloat <span class="hl opt">{</span>
+        <span class="hl kwa">return</span> <span class="hl num">45</span>
+    <span class="hl opt">}</span>
+    
+
+    
+    
+    <span class="hl slc">// MARK: - SearchBar</span>
+    <span class="hl kwa">func</span> <span class="hl kwd">searchBarSearchButtonClicked</span><span class="hl opt">(</span>_ <span class="hl kwc">searchBar</span><span class="hl opt">:</span> UISearchBar<span class="hl opt">) {</span>
+        
+        <span class="hl kwb">self</span><span class="hl opt">.</span>view<span class="hl opt">.</span><span class="hl kwd">endEditing</span><span class="hl opt">(</span><span class="hl kwb">true</span><span class="hl opt">)</span>
+        <span class="hl kwd">print</span><span class="hl opt">(</span><span class="hl str">&quot;検索中&quot;</span><span class="hl opt">)</span>
+        <span class="hl kwd">getdata</span><span class="hl opt">()</span>
+    <span class="hl opt">}</span>
+    
+    
+    override <span class="hl kwa">func</span> <span class="hl kwd">prepare</span><span class="hl opt">(</span><span class="hl kwa">for</span> segue<span class="hl opt">:</span> UIStoryboardSegue<span class="hl opt">,</span> sender<span class="hl opt">:</span> Any?<span class="hl opt">) {</span>
+        <span class="hl kwa">if</span> segue<span class="hl opt">.</span>identifier <span class="hl opt">==</span> <span class="hl str">&quot;ToWebView&quot;</span><span class="hl opt">{</span>
+            <span class="hl kwa">let</span> <span class="hl kwc">nextViewController</span> <span class="hl opt">=</span> segue<span class="hl opt">.</span>destination <span class="hl kwb">as</span><span class="hl opt">!</span> WebViewController
+            <span class="hl kwc">nextViewController</span><span class="hl opt">.</span>myURL <span class="hl opt">=</span> <span class="hl kwd">URL</span><span class="hl opt">(</span>string<span class="hl opt">:</span> sender <span class="hl kwb">as</span><span class="hl opt">!</span> <span class="hl kwb">String</span><span class="hl opt">)</span>
+        <span class="hl opt">}</span>
+    <span class="hl opt">}</span>
+    
+    
+<span class="hl opt">}</span>
+</pre>
+</body>
+</html>
+<!--HTML generated by highlight 3.47, http://www.andre-simon.de/-->
